@@ -26,31 +26,32 @@ require 'socket'
 require 'gosu'
 
 
-
+WIDTH = 400
+HEIGHT = 800
 
 class PlayerPad
 	attr_accessor :x, :y, :width, :height, :xSpeed	
-	def initialize(y)
-		@width = 200
-		@height = 35
-		@x = 1280/2 - @width/2 
-		@y = y
-		@xSpeed = 0
+	def initialize(x)
+		@width = 35
+		@height = 200
+		@x = x
+		@y = HEIGHT/2 - @height/2 
+		@ySpeed = 0
 	end
 
 	def set_speed(side)
 		case side
-			when "left"
-				@xSpeed = -10;
-			when "right"
-				@xSpeed = 10
+			when "up"
+				@ySpeed = -10;
+			when "down"
+				@ySpeed = 10
 			else 
-				@xSpeed = 0
+				@ySpeed = 0
 		end
 	end
 
 	def move
-		@x += @xSpeed
+		@y += @ySpeed
 	end
 	
 	def draw
@@ -64,8 +65,8 @@ class Ball
 
 	def initialize
 		@size = 25
-		@x = 1280/2 - @size/2 
-		@y = 720/2 - @size/2
+		@x = WIDTH/2 - @size/2 
+		@y = HEIGHT/2 - @size/2
 		@xSpeed = 5
 		@ySpeed = 5
 	end
@@ -100,32 +101,32 @@ end
 
 #-------------------------------------GameWindow---------------------------------
 class GameWindow < Gosu::Window
-	def initialize(p1X, p2X)
-		super 1280, 720
+	def initialize(p1X, p2X, socket)
+		super WIDTH, HEIGHT
 		self.caption = "Arkanoid"
     	@player1 = PlayerPad.new(p1X)
     	@player2 = PlayerPad.new(p2X)
     	@ball = Ball.new
+    	@socket = socket
     	
 
-
-  #   	Thread.new { 
-		# 	while line = @socket.gets
-		# 		puts line
-		# 		# split = (line.split(":"));
-		# 		# @player2.x = split[2].to_i;
-		# 		# @ball.x = split[4].to_i;
-		# 		# @ball.y = split[5].to_i
-		# 	end 
-		# }
+    	Thread.new { 
+			while line = @socket.gets
+				puts line
+				split = line.split("\n");
+				@player2.y = split[0].to_i;
+				# @ball.x = split[4].to_i;
+				# @ball.y = split[5].to_i
+			end 
+		}
 	end
 
 	def button_down(id)
 		case id
-			when Gosu::KbLeft
-				@player1.set_speed("left")
-			when Gosu::KbRight
-				@player1.set_speed("right")
+			when Gosu::KbUp
+				@player1.set_speed("up")
+			when Gosu::KbDown
+				@player1.set_speed("down")
 			when Gosu::KbEscape, Gosu::KbQ
 				close
 		end 
@@ -133,7 +134,7 @@ class GameWindow < Gosu::Window
 	
 	def button_up(id)
 		case id
-			when Gosu::KbLeft, Gosu::KbRight
+			when Gosu::KbUp, Gosu::KbDown
 				@player1.set_speed("none")
 		end 
 	end
@@ -142,7 +143,7 @@ class GameWindow < Gosu::Window
 		@player1.move()
 		# @ball.wall_collision()
 		# @ball.move()
-		# @socket.send(@player1.x.to_s, 0)
+		@socket.send(@player1.y.to_s, 0)
 	end
 
 	def draw
@@ -151,9 +152,6 @@ class GameWindow < Gosu::Window
 		@ball.draw()
 	end
 end
-
-
-
 
 
 
@@ -179,11 +177,11 @@ puts "What room do you want to join?"
 name = gets
 socket.send(name, 0)
 
-line = gets.chomp;
-if line == "1"
-	window = GameWindow.new(720 - 1.5 * 35, 70 - 1.5 * 35)
+line = socket.gets;
+if line == "1\n"
+	window = GameWindow.new(10, WIDTH - 35 - 10, socket)
 else
-	window = GameWindow.new(70 - 1.5 * 35, 720 - 1.5 * 35)
+	window = GameWindow.new(WIDTH - 35 - 10, 10, socket)
 end
 
 
