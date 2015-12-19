@@ -106,19 +106,18 @@ class GameWindow < Gosu::Window
     	@player1 = PlayerPad.new(p1X)
     	@player2 = PlayerPad.new(p2X)
     	@ball = Ball.new
-    	@hostname = 'localhost'
-		@port = 5000
-    	@socket = TCPSocket.open(@hostname, @port);
-    	@socket.send("1", 0);
-    	Thread.new { 
-			while line = @socket.gets
-				#puts line.split(":");
-				split = (line.split(":"));
-				@player2.x = split[2].to_i;
-				@ball.x = split[4].to_i;
-				@ball.y = split[5].to_i
-			end 
-		}
+    	
+
+
+  #   	Thread.new { 
+		# 	while line = @socket.gets
+		# 		puts line
+		# 		# split = (line.split(":"));
+		# 		# @player2.x = split[2].to_i;
+		# 		# @ball.x = split[4].to_i;
+		# 		# @ball.y = split[5].to_i
+		# 	end 
+		# }
 	end
 
 	def button_down(id)
@@ -143,7 +142,7 @@ class GameWindow < Gosu::Window
 		@player1.move()
 		# @ball.wall_collision()
 		# @ball.move()
-		@socket.send(@player1.x.to_s, 0)
+		# @socket.send(@player1.x.to_s, 0)
 	end
 
 	def draw
@@ -161,12 +160,24 @@ end
 
 threads = []
 
-# threads << Thread.new { 
-# 	while true
-# 		line = gets
-# 		socket.send(line, 0)
-# 	end
-# }
+
+hostname = 'localhost'
+port = 5000
+socket = TCPSocket.open(hostname, port);
+
+puts "Available rooms:"
+rooms = socket.gets.split(";")
+rooms.each do |room|
+	puts room
+end
+
+puts "What is your name?"
+name = gets
+socket.send(name, 0)
+    
+puts "What room do you want to join?"
+name = gets
+socket.send(name, 0)
 
 line = gets.chomp;
 if line == "1"
