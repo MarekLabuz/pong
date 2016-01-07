@@ -1,0 +1,16 @@
+Pong Erlang:
+  ☐ zamiania "case" na "if" w procesie obsługi piłki
+  ☐ zmiana zmiennych na te dotyczące ponga(tytuł okna gry, nazwa modułu itp)
+  ✔ dodanie punktacji @done (16-01-07 15:10)
+  ✔ ma być co najmniej 5 procesów (główna pętla gry, 2 x pętla gracza, pętla pokoju(piłka)) @done (16-01-07 15:10)
+  ☐ formatowanie kodu
+  ✔ obsługa wyjątków @done (16-01-07 15:10)
+  ✔ pokój zamyka się kiedy ostatni gracz z niego wyjdzie @done (16-01-07 15:10)
+  ☐ limit graczy w jednym pokoju do 2
+  ☐ ogólna refaktoryzacja
+  ☐ ograniczenie poruszania się graczy góra-dół, aby nie wychodzili po za planszę
+  ✔ przyspieszanie piłki wraz z czasem gry @done (16-01-07 15:10)
+
+
+Pong Ruby:
+  ☐ usunięcie zbędnych funkcji z klasy Ball

@@ -24,9 +24,9 @@
 
 require 'socket'
 require 'gosu'
+# require 'zorder'
 
-
-WIDTH = 400
+WIDTH = 800
 HEIGHT = 800
 
 class PlayerPad
@@ -51,7 +51,9 @@ class PlayerPad
 	end
 
 	def move
-		@y += @ySpeed
+		if (@y > 0 && @ySpeed < 0) || (@y + @height < HEIGHT && @ySpeed > 0) 
+			@y += @ySpeed
+		end
 	end
 	
 	def draw
@@ -103,18 +105,32 @@ end
 class GameWindow < Gosu::Window
 	def initialize(p1X, p2X, socket)
 		super WIDTH, HEIGHT
-		self.caption = "Arkanoid"
+		self.caption = "Pong"
     	@player1 = PlayerPad.new(p1X)
     	@player2 = PlayerPad.new(p2X)
     	@ball = Ball.new
     	@socket = socket
+    	@font = Gosu::Font.new(40)
+    	@player1score = 0
+    	@player2score = 0
     	
 
     	Thread.new { 
 			while line = @socket.gets
 				puts line
-				split = line.split("\n");
-				@player2.y = split[0].to_i;
+				# "position;500\n" -> ["position;500"] -> ["position","500"]
+				message = line.split("\n");
+				message2 = message[0].split(";");
+				if message2[0] == "position"
+					@player2.y = message2[1].to_i;
+				elsif message2[0] == "score"
+					@player1score = message2[1].to_i
+    				@player2score = message2[2].to_i
+				else
+					@ball.x = message2[1].to_i;
+					@ball.y = message2[2].to_i;
+				end
+				
 				# @ball.x = split[4].to_i;
 				# @ball.y = split[5].to_i
 			end 
@@ -150,6 +166,7 @@ class GameWindow < Gosu::Window
 		@player1.draw()
 		@player2.draw()
 		@ball.draw()
+		@font.draw("#{@player1score}:#{@player2score}", 180, 20, 1, 1.0, 1.0, 0xff_ffffff)
 	end
 end
 
@@ -174,14 +191,14 @@ name = gets
 socket.send(name, 0)
     
 puts "What room do you want to join?"
-name = gets
-socket.send(name, 0)
+room = gets
+socket.send(room, 0)
 
 line = socket.gets;
 if line == "1\n"
-	window = GameWindow.new(10, WIDTH - 35 - 10, socket)
-else
 	window = GameWindow.new(WIDTH - 35 - 10, 10, socket)
+else
+	window = GameWindow.new(10, WIDTH - 35 - 10, socket)
 end
 
 
