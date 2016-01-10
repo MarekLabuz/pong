@@ -1,4 +1,4 @@
--module(chatserver).
+-module(server).
 -export([start/1]).
 -export([init/1,loop/1,accepter/2,client/2,client_loop/2,ballMovement/10]).
  
@@ -10,7 +10,6 @@ start(Port) -> spawn(?MODULE, init, [Port]).
  
 init(Port) ->
     {ok,S} = gen_tcp:listen(Port, [{packet,0},{active,false}]),
-    % po co jest ten spawn_link, sprawdzić dla samego spawn
     A = spawn_link(?MODULE, accepter, [S, self()]), 
     loop(#chat{socket=S, accepter=A, clients=[], rooms=[]}).
     % #room{name="pokoj1", clientCount=0, clients=[], pp1=0, pp2=0},#room{name="pokoj2", clientCount=0, clients=[], pp1=0, pp2=0, p}
@@ -77,7 +76,7 @@ loop(Chat=#chat{accepter=A, clients=Cs, rooms=Rs}) ->
                     % Ball = spawn_link(?MODULE, ballMovement, [0, 3, 1, -1, 200, 400, 400, 800, #room{name=Client#client.room, clients=NewClients}, self()]),
                     if
                         NewClientCount == 2 ->
-                            Ball = spawn_link(?MODULE, ballMovement, [0, 3, 1, -1, 400, 400, 800, 800, #room{name=Client#client.room, clients=NewClients}, self()]),
+                            Ball = spawn_link(?MODULE, ballMovement, [0, 3, 1, -1, 300, 350, 600, 700, #room{name=Client#client.room, clients=NewClients}, self()]),
                             register(list_to_atom(Room#room.name), Ball);
                         true ->
                             io:format("to sie nie powinno zdarzyc")
@@ -131,7 +130,7 @@ loop(Chat=#chat{accepter=A, clients=Cs, rooms=Rs}) ->
                         NewClientCount == 0 ->
                             {value, RoomToDelete} = lists:keysearch(Client#client.room, #room.name, Rs1),
                             Rs2 = lists:delete(RoomToDelete, Rs1),
-                            io:format("~p nie powinno sie równać ~p",[Rs2, Rs1]),
+                            % io:format("~p nie powinno sie równać ~p",[Rs2, Rs1]),
                             loop(Chat#chat{clients=lists:delete(Client,Cs), rooms=Rs2});
                         true ->
                             loop(Chat#chat{clients=lists:delete(Client,Cs), rooms=Rs1})
@@ -249,20 +248,23 @@ ballMovement(L, S, WX, WY, X, Y, WIDTH, HEIGHT, Room, Server) ->
                     case X >= WIDTH - 25 of
                         true ->
                             WX1 = -1 * WX,
-                            Server ! {'player scored', 1, RoomC};
+                            Server ! {'player scored', 1, RoomC},
+                            PlayerScored = true;
                         false ->
                             case X =< 0 of
                                 true ->
                                     WX1 = -1 * WX,
-                                    Server ! {'player scored', 2, RoomC};
+                                    Server ! {'player scored', 2, RoomC},
+                                    PlayerScored = true;
                                 false ->
+                                    PlayerScored = false,
                                     if
-                                        (X >= 10 + 35 - 3) and (X =< 10 + 35) and (Y >= PP2 - 25) and (Y =< PP2 + 200) ->
+                                        (X >= 10 + 35 - S) and (X =< 10 + 35) and (Y >= PP2 - 25) and (Y =< PP2 + 200) ->
                                             io:format("dziala"),
                                             WX1 = -1 * WX;
                                         true ->
                                             if
-                                                (X + 25 >= WIDTH - 10 - 35) and (X + 25 =< WIDTH - 10 - 35 + 3) and (Y >= PP1 - 25) and (Y =< PP1 + 200) ->
+                                                (X + 25 >= WIDTH - 10 - 35) and (X + 25 =< WIDTH - 10 - 35 + S) and (Y >= PP1 - 25) and (Y =< PP1 + 200) ->
                                                     io:format("dziala"),
                                                     WX1 = -1 * WX;
                                                 true ->
@@ -290,6 +292,13 @@ ballMovement(L, S, WX, WY, X, Y, WIDTH, HEIGHT, Room, Server) ->
 
                     io:format("X:~p  Y:~p  WX:~p  WY:~p  PP1:~p  PP2:~p\n", [X1, Y1, WX1, WY1, PP1, PP2]),
                     broadcast(Room#room.clients, ["ball;~p;~p\n", X1, Y1]),
-                    ballMovement(L+1, S, WX1, WY1, X1, Y1, WIDTH, HEIGHT, Room, Server)
+                    if 
+                        (PlayerScored == true) ->
+                            ballMovement(0, 3, WX1, WY1, X1, Y1, WIDTH, HEIGHT, Room, Server);
+                        (L > 300) ->
+                            ballMovement(0, S + trunc(L/300), WX1, WY1, X1, Y1, WIDTH, HEIGHT, Room, Server);
+                        true ->
+                            ballMovement(L+1, S, WX1, WY1, X1, Y1, WIDTH, HEIGHT, Room, Server)
+                    end
             end
     end.

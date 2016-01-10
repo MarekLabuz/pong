@@ -1,42 +1,18 @@
-# require 'socket'      # Sockets are in standard library
-
-# hostname = 'localhost'
-# port = 5000
-
-# socket = TCPSocket.open(hostname, port);
-
-# while true
-# 	line = gets  
-# 	puts line.chop 
-# end
-
-# while line = socket.gets   # Read lines from the socket
-#   puts line.chop      # And print with platform line terminator
-# end
-
-
-# socket.close  
-
-
-
-
-
-
 require 'socket'
 require 'gosu'
-# require 'zorder'
 
-WIDTH = 800
-HEIGHT = 800
+WIDTH = 600
+HEIGHT = 700
 
 class PlayerPad
-	attr_accessor :x, :y, :width, :height, :xSpeed	
+	attr_accessor :x, :y, :width, :height, :ySpeed, :auto
 	def initialize(x)
 		@width = 35
 		@height = 200
 		@x = x
 		@y = HEIGHT/2 - @height/2 
 		@ySpeed = 0
+		@auto = false
 	end
 
 	def set_speed(side)
@@ -117,7 +93,7 @@ class GameWindow < Gosu::Window
 
     	Thread.new { 
 			while line = @socket.gets
-				puts line
+				# puts line
 				# "position;500\n" -> ["position;500"] -> ["position","500"]
 				message = line.split("\n");
 				message2 = message[0].split(";");
@@ -141,10 +117,14 @@ class GameWindow < Gosu::Window
 		case id
 			when Gosu::KbUp
 				@player1.set_speed("up")
+				@player1.auto = false
 			when Gosu::KbDown
 				@player1.set_speed("down")
+				@player1.auto = false
 			when Gosu::KbEscape, Gosu::KbQ
 				close
+			when Gosu::KbA
+				@player1.auto = !@player1.auto
 		end 
 	end
 	
@@ -156,6 +136,17 @@ class GameWindow < Gosu::Window
 	end
 
 	def update
+		if @player1.auto == true 
+			if (@player1.y  + @player1.height/2 - @ball.y).abs > 10
+				if @ball.y > @player1.y + @player1.height/2
+					@player1.set_speed("down")
+				else
+					@player1.set_speed("up")
+				end
+			else
+				@player1.set_speed("none")
+			end
+		end
 		@player1.move()
 		# @ball.wall_collision()
 		# @ball.move()
@@ -166,7 +157,7 @@ class GameWindow < Gosu::Window
 		@player1.draw()
 		@player2.draw()
 		@ball.draw()
-		@font.draw("#{@player1score}:#{@player2score}", 180, 20, 1, 1.0, 1.0, 0xff_ffffff)
+		@font.draw("#{@player1score}:#{@player2score}", WIDTH/2 - 20, 20, 1, 1.0, 1.0, 0xff_ffffff)
 	end
 end
 
@@ -215,55 +206,3 @@ threads << Thread.new {
 
 
 threads.each { |thr| thr.join }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# while true
-#   Thread.new(socketServer.accept) do |connection|
-#     puts "Accepting connection from: #{connection.peeraddr[2]}"
-
-#     begin
-#       while connection
-#         incomingData = connection.gets("\0")
-#         if incomingData != nil
-#           incomingData = incomingData.chomp
-#         end
-
-#         puts "Incoming: #{incomingData}"
-
-#         if incomingData == "DISCONNECT\0"
-#           puts "Received: DISCONNECT, closed connection"
-#           connection.close
-#           break
-#         else
-#           connection.puts "#{incomingData}"
-#           connection.flush
-#         end
-#       end
-#     rescue Exception => e
-#       # Displays Error Message
-#       puts "#{ e } (#{ e.class })"
-#     ensure
-#       connection.close
-#       puts "ensure: Closing"
-#     end
-#   end
-# end
